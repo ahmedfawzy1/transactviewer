@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import "chart.js/auto";
 import { Line } from "react-chartjs-2";
@@ -10,57 +9,41 @@ export default function Hero() {
   const [customerFilter, setCustomerFilter] = useState("");
   const [amountFilter, setAmountFilter] = useState("");
 
-  // Fetch customers on component mount
+  // Fetch customers and transactions on component mount
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const fetchData = async () => {
       try {
-        const customerResponse = await axios.get("http://localhost:3000/customers");
-        setCustomers(customerResponse?.data);
+        const response = await fetch("/data.json");
+        const data = await response.json();
+        setCustomers(data.customers);
+        setTransactions(data.transactions);
       } catch (error) {
-        console.log("Error fetching customers", error);
+        console.log("Error fetching data", error);
       }
     };
 
-    fetchCustomers();
+    fetchData();
   }, []);
-
-  // Fetch transactions when filters change
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        let filteredCustomers = customers;
-
-        // Filter customers by name
-        if (nameFilter) {
-          filteredCustomers = customers.filter((customer) => customer.name.toLowerCase().includes(nameFilter.toLowerCase()));
-        }
-
-        // Get the customer IDs from the filtered customers
-        const customerIds = filteredCustomers.map((customer) => customer.id);
-
-        const nameQuery = nameFilter ? `&name_like=${nameFilter}` : "";
-        const customerQuery = customerIds.length ? `&customer_id=${customerIds.join("&customer_id=")}` : "";
-        const amountQuery = amountFilter ? `&amount=${amountFilter}` : "";
-        const transactionsResponse = await axios.get(`http://localhost:3000/transactions?_expand=customer${nameQuery}${customerQuery}${amountQuery}`);
-        setTransactions(transactionsResponse?.data);
-      } catch (error) {
-        console.log("Error fetching transactions", error);
-      }
-    };
-
-    fetchTransactions();
-  }, [nameFilter, customerFilter, amountFilter]);
 
   // Get customer name by ID
   const getCustomerName = (customerId) => {
     const customer = customers.find((customer) => Number(customer.id) === customerId);
-    return customer ? customer.name : "Unkown";
+    return customer ? customer.name : "Unknown";
   };
 
   // Prepare data for the chart
   const prepareChartData = () => {
+    const filteredTransactions = transactions.filter((transaction) => {
+      const customer = getCustomerName(transaction.customer_id);
+      return (
+        (!nameFilter || customer.toLowerCase().includes(nameFilter.toLowerCase())) &&
+        (!customerFilter || transaction.customer_id === Number(customerFilter)) &&
+        (!amountFilter || transaction.amount === Number(amountFilter))
+      );
+    });
+
     const chartData = {};
-    transactions.forEach((transaction) => {
+    filteredTransactions.forEach((transaction) => {
       const date = transaction.date;
       if (!chartData[date]) {
         chartData[date] = 0;
@@ -128,16 +111,25 @@ export default function Hero() {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((transactions) => (
-            <tr key={transactions.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-              <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                {transactions.id}
-              </th>
-              <td className="px-6 py-4">{getCustomerName(transactions.customer_id)}</td>
-              <td className="px-6 py-4">{transactions.date}</td>
-              <td className="px-6 py-4">{transactions.amount}</td>
-            </tr>
-          ))}
+          {transactions
+            .filter((transaction) => {
+              const customer = getCustomerName(transaction.customer_id);
+              return (
+                (!nameFilter || customer.toLowerCase().includes(nameFilter.toLowerCase())) &&
+                (!customerFilter || transaction.customer_id === Number(customerFilter)) &&
+                (!amountFilter || transaction.amount === Number(amountFilter))
+              );
+            })
+            .map((transaction) => (
+              <tr key={transaction.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {transaction.id}
+                </th>
+                <td className="px-6 py-4">{getCustomerName(transaction.customer_id)}</td>
+                <td className="px-6 py-4">{transaction.date}</td>
+                <td className="px-6 py-4">{transaction.amount}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
       <div className="mt-8 w-full max-w-[300px] md:max-w-[800px]">

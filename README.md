@@ -14,14 +14,6 @@ The Customer Transactions Dashboard is a web application designed to manage and 
 - React.js: For building the user interface.
 - Axios: For making HTTP requests to fetch customer and transaction data.
 - Chart.js and react-chartjs-2: For creating dynamic and interactive charts.
-- json-server: For simulating a REST API and serving customer and transaction data.
-
-## Backend
-
-- JSON Server: For simulating a REST API and serving customer and transaction data.
-- JSON Sever host 2 Endpoints:
-- http://localhost:3000/customers
-- http://localhost:3000/transactions
 
 ## Installation and Setup:
 
@@ -31,14 +23,7 @@ The Customer Transactions Dashboard is a web application designed to manage and 
   npm install
 ```
 
-2- Start JSON Server:
-
-```bash
-  cd localhost
-  npm run json:server
-```
-
-3- Run the Application:
+2- Run the Application:
 
 ```bash
   npm start
