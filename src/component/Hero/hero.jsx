@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "chart.js/auto";
-import { Line } from "react-chartjs-2";
+import { Chart, Line } from "react-chartjs-2";
 
 export default function Hero() {
   const [customers, setCustomers] = useState([]);
@@ -63,6 +63,43 @@ export default function Hero() {
           fill: false,
           backgroundColor: "rgba(75,192,192,0.2)",
           borderColor: "rgba(75,192,192,1)",
+        },
+      ],
+    };
+  };
+
+  // Prepare data for the bar chart
+  const prepareBarChartData = () => {
+    const filteredTransactions = transactions.filter((transaction) => {
+      const customer = getCustomerName(transaction.customer_id);
+      return (
+        (!nameFilter || customer.toLowerCase().includes(nameFilter.toLowerCase())) &&
+        (!customerFilter || transaction.customer_id === Number(customerFilter)) &&
+        (!amountFilter || transaction.amount === Number(amountFilter))
+      );
+    });
+
+    const chartData = {};
+    filteredTransactions.forEach((transaction) => {
+      const customerName = getCustomerName(transaction.customer_id);
+      if (!chartData[customerName]) {
+        chartData[customerName] = 0;
+      }
+      chartData[customerName] += transaction.amount;
+    });
+
+    const labels = Object.keys(chartData);
+    const data = Object.values(chartData);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Total Transaction Amount by Customer",
+          data,
+          backgroundColor: "rgba(153,102,255,0.2)",
+          borderColor: "rgba(153,102,255,1)",
+          borderWidth: 1,
         },
       ],
     };
@@ -132,8 +169,13 @@ export default function Hero() {
             ))}
         </tbody>
       </table>
-      <div className="mt-8 w-full max-w-[300px] md:max-w-[800px]">
-        <Line data={prepareChartData()} />
+      <div className="mt-8 w-full max-w-[300px] md:max-w-[800px] flex flex-col md:flex-row gap-5 md:gap-0">
+        <div className="w-full">
+          <Line data={prepareChartData()} />
+        </div>
+        <div className="w-full">
+          <Chart type="bar" data={prepareBarChartData()} />
+        </div>
       </div>
     </div>
   );
